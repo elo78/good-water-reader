@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Good Water Reader – is this water right for your body?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#f3fafb;--ink:#0b2f3a;--mut:#4f6d76;--card:#fff;--line:#cfe3e8;--acc:#0a7c8c;--ok:#1b8a5a;--warn:#c27a00;--bad:#c0392b;--okbg:#e3f5ec;--warnbg:#fff1d6;--badbg:#fbe5e2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#071c22;--ink:#e3f3f6;--mut:#93b3bb;--card:#0d2a33;--line:#1d4551;--acc:#4cc3d4;--ok:#52d193;--warn:#f0b34a;--bad:#ff8a7a;--okbg:#0f3326;--warnbg:#3a2c0b;--badbg:#3d1713}}
+*{box-sizing:border-box}
+html{height:auto}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Bricolage Grotesque",system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:980px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:clamp(2rem,6vw,3.4rem);line-height:1.05;margin:8px 0 10px;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.15rem;margin:0 0 10px}
+p.lead{color:var(--mut);max-width:60ch;margin:0 0 20px}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:820px){.grid{grid-template-columns:1.1fr .9fr}}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button{font:inherit;cursor:pointer;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 14px}
+button:hover{border-color:var(--acc)}
+button.primary{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600;padding:10px 22px;border-radius:10px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+label{display:block;font-size:.85rem;color:var(--mut)}
+input[type=number]{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.checks{display:grid;gap:6px}
+.checks label{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:.95rem}
+.checks small{color:var(--mut)}
+#result{margin-top:16px;display:none}
+.verdict{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.verdict h2{font-size:1.6rem;margin:0}
+.glass{width:90px;flex:none}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.8rem;font-weight:600}
+.l0{background:var(--okbg);color:var(--ok)}.l1{background:var(--warnbg);color:var(--warn)}.l2{background:var(--badbg);color:var(--bad)}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.93rem}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.note{font-size:.85rem;color:var(--mut);margin-top:14px}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<h1>Good Water Reader</h1>
+<p class="lead">Enter what’s on the bottle label or your water test, tick what applies to you, and the reader checks each dissolved substance against health guideline limits and your body’s sensitivities.</p>
+
+<div class="grid">
+<section>
+<h2>1. The water</h2>
+<div class="presets" id="presets" role="group" aria-label="Example waters"></div>
+<div class="fields" id="fields"></div>
+<p class="note">Leave a box empty if you don’t know the value. Labels give mg/L (same as ppm). Examples are rough illustrations, so use your own label or test values.</p>
+</section>
+
+<section>
+<h2>2. You</h2>
+<div class="checks" id="checks"></div>
+<p style="margin:16px 0 0"><button class="primary" id="go">Read this water</button></p>
+</section>
+</div>
+
+<section id="result" aria-live="polite">
+<div class="verdict">
+<svg class="glass" viewBox="0 0 90 120" aria-hidden="true">
+<defs><clipPath id="c"><path d="M12 8h66l-8 104H20z"/></clipPath></defs>
+<rect id="lvl" x="0" y="120" width="90" height="120" fill="var(--acc)" clip-path="url(#c)" style="transition:all .7s"/>
+<path d="M12 8h66l-8 104H20z" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+</svg>
+<div><h2 id="vt"></h2><p id="vs" style="margin:4px 0 0;color:var(--mut)"></p></div>
+</div>
+<p id="lsi" style="margin:14px 0 0"></p><div class="wrap"><table><thead><tr><th>Substance</th><th>Value</th><th>Result</th><th>Why</th></tr></thead><tbody id="rows"></tbody></table></div>
+<details><summary>The chemistry behind it</summary>
+<p>Dissolved minerals are ions. Sodium, calcium, magnesium, bicarbonate, chloride and sulfate set the taste and the total dissolved solids (TDS). Your gut, kidneys and blood pressure each respond to specific ions: sodium holds water in the body, magnesium with sulfate draws water into the intestine (a laxative effect), and nitrate can interfere with oxygen transport in infants. pH shows how acidic or alkaline the water is, which matters for reflux and for taste.</p>
+<p>The limits used here come from the WHO drinking-water guidelines and common low-sodium and infant-feeding advice. Rules are simplified.</p></details>
+<p class="note"><strong>Important:</strong> this is a screening and learning tool, not a medical device or diagnosis. It cannot detect germs, pesticides or heavy metals unless you have test values for them. If you have a medical condition or react to water, check with a doctor.</p>
+</section>
+<section style="margin-top:16px"><details style="margin:0"><summary style="font-size:1.15rem">Methods and sources</summary><div style="margin-top:10px">
+<p style="margin:0 0 8px;color:var(--mut)">Each result compares a measured value with a guideline limit, then tightens the limit for the sensitivities you tick. Limits marked WHO come from the WHO Guidelines for Drinking-water Quality. Limits marked screening are conservative rules of this tool, not official standards.</p>
+<div class="wrap"><table><thead><tr><th>Substance</th><th>Limit used</th><th>Basis</th></tr></thead><tbody>
+<tr><td>pH</td><td>6.5–8.5</td><td>WHO operational range</td></tr>
+<tr><td>TDS</td><td>500 mg/L (kidney concerns: same, treated as avoid)</td><td>WHO taste scale (good below 600, unacceptable above 1000)</td></tr>
+<tr><td>Sodium</td><td>200 mg/L; 20 and 50 mg/L for low-sodium diets</td><td>WHO taste threshold; low-sodium limits are screening</td></tr>
+<tr><td>Nitrate (as NO₃)</td><td>50 mg/L; 10 mg/L for infants and pregnancy</td><td>WHO health limit; stricter values are screening</td></tr>
+<tr><td>Fluoride</td><td>1.5 mg/L; 0.7 mg/L for infants</td><td>WHO health limit; infant value is screening</td></tr>
+<tr><td>Sulfate</td><td>250 mg/L; 500 mg/L</td><td>WHO taste threshold; laxative effect screening</td></tr>
+<tr><td>Magnesium</td><td>120 mg/L; 50 mg/L (gut); 30 mg/L (kidney)</td><td>Screening, based on laxative and kidney-clearance effects</td></tr>
+<tr><td>Chloride</td><td>250 mg/L</td><td>WHO taste threshold</td></tr>
+<tr><td>Iron</td><td>0.3 mg/L; 2 mg/L</td><td>WHO taste and staining threshold; upper value screening</td></tr>
+<tr><td>Arsenic, lead</td><td>0.01 mg/L each</td><td>WHO health limits</td></tr>
+<tr><td>Manganese</td><td>0.08 mg/L</td><td>WHO health-based value</td></tr>
+<tr><td>Copper</td><td>2 mg/L (1 mg/L for sensitive gut)</td><td>WHO health limit; lower value screening</td></tr>
+<tr><td>Hardness</td><td>180 mg/L as CaCO₃</td><td>Common “very hard” class; computed as 2.497·Ca + 4.118·Mg</td></tr>
+</tbody></table></div>
+<p style="margin:10px 0 0;color:var(--mut)">The Langelier Saturation Index is LSI = pH − pHs, with pHs = (9.3 + A + B) − (C + D), where A = (log₁₀TDS − 1)/10, B = −13.12·log₁₀(T + 273) + 34.55, C = log₁₀(Ca as CaCO₃) − 0.4 and D = log₁₀(alkalinity as CaCO₃). Below −0.5 is corrosive, above +0.5 is scale-forming. Planned: Nigerian drinking-water standard values (NIS 554) beside the WHO ones.</p></div></details></section>
+<section style="margin-top:16px"><h2>About this project</h2>
+<p style="margin:0;color:var(--mut)">Good Water Reader is a chemistry and chemical engineering project that matches the dissolved ions in drinking water to a person’s body. Some people react to waters that most people drink without harm, so a single “safe” limit is not enough. The method compares each substance with WHO guideline values and adjusts the limits for sensitivities such as low-sodium diets, kidney concerns, infants and sensitive stomachs. Your entries stay in your browser and are never sent anywhere.</p></section>
+</main>
+<script>
+const P=[
+["ph","pH","",0.1],["tds","TDS","mg/L"],["na","Sodium","mg/L"],["ca","Calcium","mg/L"],["mg","Magnesium","mg/L"],
+["so4","Sulfate","mg/L"],["cl","Chloride","mg/L"],["no3","Nitrate (as NO₃)","mg/L"],["f","Fluoride","mg/L"],["fe","Iron","mg/L"],["alk","Alkalinity (as CaCO₃)","mg/L"],["temp","Temperature","°C"],["as","Arsenic","mg/L"],["pb","Lead","mg/L"],["mn","Manganese","mg/L"],["cu","Copper","mg/L"]];
+const EX={
+"Distilled":{ph:6,tds:2,na:0,ca:0,mg:0,so4:0,cl:0,no3:0,f:0,fe:0},
+"Sachet/purified":{ph:6.8,tds:25,na:6,ca:4,mg:2,so4:3,cl:8,no3:2,f:0.1,fe:0},
+"Mineral bottled":{ph:7.6,tds:320,na:10,ca:75,mg:25,so4:30,cl:12,no3:3,f:0.2,fe:0},
+"Alkaline bottled":{ph:9.3,tds:150,na:20,ca:20,mg:8,so4:10,cl:10,no3:1,f:0.1,fe:0},
+"Hard borehole":{ph:6.3,tds:720,na:60,ca:130,mg:60,so4:280,cl:120,no3:35,f:0.4,fe:0.7}};
+const ALK={"Distilled":2,"Sachet/purified":15,"Mineral bottled":230,"Alkaline bottled":110,"Hard borehole":280};Object.keys(EX).forEach(n=>{EX[n].alk=ALK[n];EX[n].temp=25;});Object.assign(EX["Hard borehole"],{as:0.002,pb:0.004,mn:0.2,cu:0.1});
+const W=[
+["lowna","Told to limit salt or sodium","(high blood pressure, heart or kidney advice)"],
+["kidney","Kidney concerns","(kidneys clear minerals slowly)"],
+["infant","Water is for a baby or formula","(under 12 months)"],
+["preg","Pregnant or breastfeeding"],
+["gut","Sensitive stomach or loose stools after some waters"],
+["reflux","Acid reflux or heartburn"],
+["skin","Sensitive or eczema-prone skin","(for washing too)"]];
+const $=s=>document.querySelector(s);
+$("#fields").innerHTML=P.map(([k,n,u])=>`<label>${n}${u?` (${u})`:""}<input type="number" id="${k}" min="0" step="any" inputmode="decimal"></label>`).join("");
+$("#checks").innerHTML=W.map(([k,n,s])=>`<label><input type="checkbox" id="w_${k}"><span>${n}${s?`<br><small>${s}</small>`:""}</span></label>`).join("");
+$("#presets").innerHTML=Object.keys(EX).map(n=>`<button type="button">${n}</button>`).join("");
+$("#presets").onclick=e=>{if(e.target.tagName!=="BUTTON")return;const d=EX[e.target.textContent];P.forEach(([k])=>$("#"+k).value=d[k]??"");};
+
+function rules(v,w){
+ const r=[];const add=(k,l,t)=>r.push({k,l,t});
+ const x=v;
+ if(x.ph!=null){
+  if(x.ph<6.5)add("ph",w.reflux?2:1,"Acidic water (below 6.5). "+(w.reflux?"Can aggravate reflux.":"May taste sour and can leach metals from pipes."));
+  else if(x.ph>9)add("ph",w.kidney||w.reflux?1:1,"Strongly alkaline (above 9). Fine for most people in moderation; not a proven health benefit"+(w.kidney?", and not advised for kidney concerns without a doctor’s okay.":"."));
+  else if(x.ph>8.5)add("ph",1,"Slightly above the 6.5–8.5 comfort range.");
+  else add("ph",0,"Within the 6.5–8.5 range.");}
+ if(x.tds!=null){
+  if(x.tds>1000)add("tds",2,"Very high dissolved solids (above 1000 mg/L). Salty or bitter, and a heavy load for kidneys.");
+  else if(x.tds>500)add("tds",w.kidney?2:1,"Above 500 mg/L, which is the common taste and comfort limit."+(w.kidney?" Higher mineral load is harder on weakened kidneys.":""));
+  else if(x.tds<30)add("tds",w.infant||w.preg?0:0,"Very low minerals. Safe to drink; it just adds no minerals, so keep eating a mineral-rich diet.");
+  else add("tds",0,"Moderate mineral content.");}
+ if(x.na!=null){
+  if(w.lowna&&x.na>50)add("na",2,"High sodium for a low-sodium diet (above 50 mg/L).");
+  else if(w.lowna&&x.na>20)add("na",1,"Above 20 mg/L, the usual cap for strict low-sodium advice.");
+  else if(x.na>200)add("na",1,"Above 200 mg/L tastes salty.");
+  else add("na",0,"Sodium is low enough.");}
+ if(x.no3!=null){
+  if(x.no3>50)add("no3",2,"Above the 50 mg/L limit. Risk is highest for babies (blue-baby syndrome).");
+  else if((w.infant||w.preg)&&x.no3>10)add("no3",w.infant?2:1,"Above 10 mg/L; many health agencies advise caution for infants and pregnancy.");
+  else add("no3",0,"Below nitrate limits.");}
+ if(x.f!=null){
+  if(x.f>1.5)add("f",2,"Above the 1.5 mg/L WHO limit. Long-term intake can mark teeth and stress bones.");
+  else if(w.infant&&x.f>0.7)add("f",1,"Above 0.7 mg/L. Formula made with it every day can cause tooth spotting.");
+  else add("f",0,"Fluoride is in a safe range.");}
+ if(x.so4!=null){
+  if(x.so4>500)add("so4",2,"Very high sulfate. A well-known laxative effect.");
+  else if(x.so4>250)add("so4",w.gut||w.infant?2:1,"Above 250 mg/L. Can loosen stools"+(w.gut||w.infant?", especially with a sensitive gut or in babies.":"."));
+  else add("so4",0,"Sulfate is low.");}
+ if(x.mg!=null){
+  if(w.kidney&&x.mg>30)add("mg",1,"Weak kidneys clear magnesium slowly, so intake can build up.");
+  else if(w.gut&&x.mg>50)add("mg",1,"Magnesium draws water into the gut and can loosen stools.");
+  else if(x.mg>120)add("mg",1,"High magnesium: bitter taste and laxative effect.");
+  else add("mg",0,"Magnesium is fine.");}
+ if(x.cl!=null){x.cl>250?add("cl",1,"Above 250 mg/L tastes salty."):add("cl",0,"Chloride is fine.");}
+ if(x.fe!=null){
+  if(x.fe>2)add("fe",2,"High iron: metallic taste, stomach upset.");
+  else if(x.fe>0.3)add("fe",w.gut?2:1,"Above 0.3 mg/L: metallic taste, staining"+(w.gut?", and it can upset a sensitive stomach.":"."));
+  else add("fe",0,"Iron is low.");}
+ if(x.ca!=null&&x.mg!=null){const h=2.497*x.ca+4.118*x.mg;
+  if(h>180)add("hard",w.skin?1:0,"Hard water ("+Math.round(h)+" mg/L as CaCO₃). "+(w.skin?"Can dry and irritate sensitive skin when washing.":"Harmless to drink; it mainly causes scale."));}
+ if(x.as!=null)add("as",x.as>0.01?2:0,x.as>0.01?"Above the 0.01 mg/L WHO limit. Long-term intake raises cancer and skin-damage risk.":"Below the WHO limit.");
+ if(x.pb!=null){x.pb>0.01?add("pb",2,"Above the 0.01 mg/L WHO limit. No level of lead is truly safe, and children are most at risk."):(w.infant||w.preg)&&x.pb>0.005?add("pb",1,"Within the limit but above 0.005 mg/L; extra caution for babies and pregnancy."):add("pb",0,"Below the WHO limit.");}
+ if(x.mn!=null)add("mn",x.mn>0.08?(w.infant?2:1):0,x.mn>0.08?"Above 0.08 mg/L: stains, tastes metallic, and long-term intake is a concern for babies.":"Manganese is low.");
+ if(x.cu!=null){x.cu>2?add("cu",2,"Above the 2 mg/L WHO limit."):x.cu>1&&w.gut?add("cu",1,"Above 1 mg/L; can upset a sensitive stomach."):add("cu",0,"Copper is fine.");}
+ return r;}
+function lsiText(v){
+ if(v.ph==null||v.tds==null||v.ca==null||v.alk==null||v.tds<=0||v.ca<=0||v.alk<=0)return "Scale index (Langelier): add pH, TDS, calcium and alkalinity to calculate it.";
+ const T=(v.temp==null?25:v.temp)+273.15;
+ const A=(Math.log10(v.tds)-1)/10,B=-13.12*Math.log10(T)+34.55,C=Math.log10(v.ca*2.497)-0.4,D=Math.log10(v.alk);
+ const L=v.ph-((9.3+A+B)-(C+D));
+ const m=L<-0.5?"corrosive: it tends to dissolve metal from pipes and fittings":L>0.5?"scale-forming: it tends to deposit limescale":"balanced";
+ return `<strong>Langelier Saturation Index: ${L.toFixed(2)}</strong> – ${m}.`;}
+const NAMES={ph:"pH",tds:"TDS",na:"Sodium",ca:"Calcium",mg:"Magnesium",so4:"Sulfate",cl:"Chloride",no3:"Nitrate",f:"Fluoride",fe:"Iron",as:"Arsenic",pb:"Lead",mn:"Manganese",cu:"Copper",hard:"Hardness"};
+const LBL=["Fine","Caution","Avoid"];
+$("#go").onclick=()=>{
+ const v={};let n=0;P.forEach(([k])=>{const s=$("#"+k).value;v[k]=s===""?null:+s;if(s!=="")n++;});
+ const w={};W.forEach(([k])=>w[k]=$("#w_"+k).checked);
+ const out=$("#result");out.style.display="block";
+const badF=P.filter(([k])=>v[k]!=null&&(v[k]<0||(k==="ph"&&v[k]>14)||(k==="temp"&&v[k]>60)));
+ if(badF.length){$("#vt").textContent="Check your values";$("#vs").textContent="Impossible value in: "+badF.map(a=>a[1]).join(", ")+".";$("#rows").innerHTML="";$("#lsi").textContent="";return;}
+ if(!n){$("#vt").textContent="Add at least one value";$("#vs").textContent="Try a preset or type values from your label.";$("#rows").innerHTML="";return;}
+ const r=rules(v,w);if(!r.length){$("#vt").textContent="Add a value to check";$("#vs").textContent="Alkalinity and temperature are only used for the scale index.";$("#rows").innerHTML="";$("#lsi").textContent="";return;}const worst=Math.max(0,...r.map(a=>a.l));
+ const bad=r.filter(a=>a.l==2).length,warn=r.filter(a=>a.l==1).length;
+ const score=Math.max(0,100-bad*40-warn*15);
+ const T=["Looks compatible","Drink with caution","Likely not compatible"];
+ $("#vt").textContent=T[worst];
+ $("#vs").textContent=`${r.length} checks: ${r.length-bad-warn} fine, ${warn} caution, ${bad} avoid.`;
+ const L=$("#lvl");L.setAttribute("y",8+104*(1-score/100));L.setAttribute("fill",["var(--ok)","var(--warn)","var(--bad)"][worst]);
+ $("#rows").innerHTML=r.sort((a,b)=>b.l-a.l).map(a=>`<tr><td>${NAMES[a.k]}</td><td>${v[a.k]!=null?v[a.k]:"–"}</td><td><span class="tag l${a.l}">${LBL[a.l]}</span></td><td>${a.t}</td></tr>`).join("");
+ $("#lsi").innerHTML=lsiText(v);out.scrollIntoView({behavior:"smooth",block:"start"});};
+</script>
+</body>
+</html>
